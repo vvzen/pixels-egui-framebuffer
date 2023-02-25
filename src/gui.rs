@@ -210,15 +210,8 @@ impl Gui {
                 ui.label("File name:");
                 ui.text_edit_singleline(&mut self.file_path);
                 if ui.button("Save").clicked() {
-                    eprintln!("window width: {}", self.window_width);
-                    eprintln!("scale factor: {}", self.scale_factor);
-                    eprintln!("{} saved to disk!", self.file_path);
+                    // Here goes your save logic
                 }
             });
     }
-}
-
-/// Linear remap a value in one range into another range (no clamping)
-pub fn fit_range(x: f32, imin: f32, imax: f32, omin: f32, omax: f32) -> f32 {
-    (omax - omin) * (x - imin) / (imax - imin) + omin
 }

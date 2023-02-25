@@ -1,0 +1,6 @@
+pub const WINDOW_WIDTH: u32 = 1500;
+pub const WINDOW_HEIGHT: u32 = 720;
+
+pub const FRAMEBUFFER_WIDTH: u32 = 200;
+pub const FRAMEBUFFER_HEIGHT: u32 = 200;
+pub const FRAMEBUFFER_SIZE: usize = (FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT * 4) as usize;

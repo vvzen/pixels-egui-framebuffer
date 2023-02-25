@@ -1,8 +1,6 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
-use colstodian::spaces::EncodedSrgb;
-use colstodian::{color, Color, Display, Oklab};
 use log::error;
 use pixels::{wgpu, Error, PixelsBuilder, SurfaceTexture};
 use winit::dpi::LogicalSize;
@@ -11,16 +9,15 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
 
-use crate::gui::{fit_range, Framework};
-
+mod constants;
 mod gui;
+mod image;
 
-const WINDOW_WIDTH: u32 = 1500;
-const WINDOW_HEIGHT: u32 = 720;
-
-const FRAMEBUFFER_WIDTH: u32 = 200;
-const FRAMEBUFFER_HEIGHT: u32 = 200;
-const FRAMEBUFFER_SIZE: usize = (FRAMEBUFFER_WIDTH * FRAMEBUFFER_HEIGHT * 4) as usize;
+use crate::constants::{
+    FRAMEBUFFER_HEIGHT, FRAMEBUFFER_SIZE, FRAMEBUFFER_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
+};
+use crate::gui::Framework;
+use crate::image::render_bg_image;
 
 /// Representation of the application state
 struct ApplicationState {
@@ -165,36 +162,6 @@ impl ApplicationState {
             // Here we draw the pixels!
             // In my case, I already drew them, so I can copy them around
             pixel.copy_from_slice(other_pixel);
-        }
-    }
-}
-
-fn render_bg_image(pixels: &mut [u8; FRAMEBUFFER_SIZE], width: usize, height: usize) {
-    let mut index: usize = 0;
-    for x in 0..width {
-        for y in 0..height {
-            // Get normalized U,V coordinates as we move through the image
-            let u = fit_range(x as f32, 0.0, WINDOW_WIDTH as f32, 0.0, 1.0);
-            let v = fit_range(y as f32, 0.0, WINDOW_HEIGHT as f32, 0.0, 1.0);
-
-            // Generate a gradient between two colors in LAB space
-            let red = color::srgb_u8(255, 0, 0).convert::<Oklab>();
-            let blue = color::srgb_u8(0, 0, 255).convert::<Oklab>();
-            let green = color::srgb_u8(0, 0, 255).convert::<Oklab>();
-            let h_blended = red.blend(green, u);
-            let v_blended = h_blended.blend(blue, v);
-
-            // Convert to display referred
-            let output: Color<EncodedSrgb, Display> = v_blended.convert();
-
-            // Can I avoid doing a copy here ?
-            let rgb: [u8; 3] = output.to_u8();
-
-            pixels[index + 0] = rgb[0];
-            pixels[index + 1] = rgb[1];
-            pixels[index + 2] = rgb[2];
-            pixels[index + 3] = 0xff;
-            index += 4;
         }
     }
 }
