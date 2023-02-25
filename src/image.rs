@@ -19,7 +19,7 @@ pub fn render_bg_image(pixels: &mut [u8; FRAMEBUFFER_SIZE]) {
             // Generate a gradient between two colors in LAB space
             let red = color::srgb_u8(255, 0, 0).convert::<Oklab>();
             let blue = color::srgb_u8(0, 0, 255).convert::<Oklab>();
-            let green = color::srgb_u8(0, 0, 255).convert::<Oklab>();
+            let green = color::srgb_u8(0, 255, 0).convert::<Oklab>();
             let h_blended = red.blend(green, u);
             let v_blended = h_blended.blend(blue, v);
 
