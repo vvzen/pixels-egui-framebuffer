@@ -41,3 +41,26 @@ pub fn render_bg_image(render_buffer: &mut [f32; RENDER_BUFFER_SIZE]) {
         }
     }
 }
+
+pub fn pixels_array_to_exr_channels(
+    render_buffer: &mut [f32; RENDER_BUFFER_SIZE],
+) -> AnyChannels<FlatSamples> {
+    // A vec for each channel
+    let mut r_vec: Vec<f32> = Vec::new();
+    let mut g_vec: Vec<f32> = Vec::new();
+    let mut b_vec: Vec<f32> = Vec::new();
+
+    for f32_color in render_buffer.chunks_exact(3) {
+        r_vec.push(f32_color[0]);
+        g_vec.push(f32_color[1]);
+        b_vec.push(f32_color[2]);
+    }
+
+    // Save the data into the channels
+    let r_channel = AnyChannel::new("R", FlatSamples::F32(r_vec));
+    let g_channel = AnyChannel::new("G", FlatSamples::F32(g_vec));
+    let b_channel = AnyChannel::new("B", FlatSamples::F32(b_vec));
+
+    let channels = AnyChannels::sort(smallvec![r_channel, g_channel, b_channel]);
+    channels
+}
