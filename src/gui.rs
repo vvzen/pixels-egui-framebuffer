@@ -1,8 +1,13 @@
+use std::path::PathBuf;
+
 use egui::{ClippedPrimitive, Context, TexturesDelta};
 use egui_wgpu::renderer::{Renderer, ScreenDescriptor};
 use pixels::{wgpu, PixelsContext};
 use winit::event_loop::EventLoopWindowTarget;
 use winit::window::Window;
+
+use crate::constants::{RENDER_BUFFER_HEIGHT, RENDER_BUFFER_SIZE, RENDER_BUFFER_WIDTH};
+use crate::image::{pixels_array_to_exr_channels, write_simple_image};
 
 /// Manages all state required for rendering egui over `Pixels`.
 pub(crate) struct Framework {
@@ -30,6 +35,8 @@ struct Gui {
     color_a: [u8; 4],
     color_b: [u8; 4],
     file_format_chosen: FileFormat,
+    // Pointers
+    render_buffer_pointer: Box<[f32; RENDER_BUFFER_SIZE]>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -45,6 +52,7 @@ impl Framework {
         height: u32,
         scale_factor: f32,
         pixels: &pixels::Pixels,
+        render_buffer: Box<[f32; RENDER_BUFFER_SIZE]>,
     ) -> Self {
         let max_texture_size = pixels.device().limits().max_texture_dimension_2d as usize;
 
@@ -58,7 +66,7 @@ impl Framework {
         };
         let renderer = Renderer::new(pixels.device(), pixels.render_texture_format(), None, 1);
         let textures = TexturesDelta::default();
-        let gui = Gui::new(width, height, scale_factor);
+        let gui = Gui::new(width, height, scale_factor, render_buffer);
 
         Self {
             egui_ctx,
@@ -151,7 +159,12 @@ impl Framework {
 
 impl Gui {
     /// Create a `Gui`.
-    fn new(width: u32, height: u32, scale_factor: f32) -> Self {
+    fn new(
+        width: u32,
+        height: u32,
+        scale_factor: f32,
+        render_buf_p: Box<[f32; RENDER_BUFFER_SIZE]>,
+    ) -> Self {
         Self {
             window_open: true,
             should_rerender: false,
@@ -162,6 +175,7 @@ impl Gui {
             color_b: [0xff, 0xff, 0xff, 0xff],
             scale_factor,
             file_format_chosen: FileFormat::OpenEXR,
+            render_buffer_pointer: render_buf_p,
         }
     }
 
@@ -231,8 +245,35 @@ impl Gui {
 
                 ui.label("File name:");
                 ui.text_edit_singleline(&mut self.file_path);
+
+                // Here goes the save logic
                 if ui.button("Save").clicked() {
-                    // Here goes your save logic
+                    let exr_channels = pixels_array_to_exr_channels(&self.render_buffer_pointer);
+
+                    let root_dir = PathBuf::from("images");
+                    if !root_dir.exists() {
+                        match std::fs::create_dir_all(&root_dir) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                eprintln!("Failed to create images dir: {e:?}");
+                            }
+                        }
+                    }
+                    let image_path = root_dir.join(&self.file_path);
+
+                    match write_simple_image(
+                        &image_path,
+                        exr_channels,
+                        RENDER_BUFFER_WIDTH as usize,
+                        RENDER_BUFFER_HEIGHT as usize,
+                    ) {
+                        Ok(_) => {
+                            eprintln!("Image saved to {}", image_path.display());
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to save image: {e:?}");
+                        }
+                    }
                 }
             });
     }

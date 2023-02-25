@@ -42,11 +42,18 @@ fn main() -> Result<(), Error> {
             .unwrap()
     };
 
+    let mut app = ApplicationState::new();
+
+    let render_buffer_pointer = Box::new(app.framebuffer);
+    println!(
+        "Render buffer occupies {} bytes on the stack",
+        std::mem::size_of_val(&render_buffer_pointer)
+    );
+
     let (mut pixels, mut framework) = {
         let window_size = window.inner_size();
         let scale_factor = window.scale_factor() as f32;
 
-        // let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         let surface_texture =
             SurfaceTexture::new(RENDER_BUFFER_WIDTH, RENDER_BUFFER_HEIGHT, &window);
 
@@ -60,11 +67,11 @@ fn main() -> Result<(), Error> {
             window_size.height,
             scale_factor,
             &pixels,
+            render_buffer_pointer,
         );
 
         (pixels, framework)
     };
-    let mut app = ApplicationState::new();
 
     event_loop.run(move |event, _, control_flow| {
         // Handle input events
@@ -91,7 +98,7 @@ fn main() -> Result<(), Error> {
             }
 
             // Update internal state and request a redraw
-            app.update();
+            &app.update();
             window.request_redraw();
         }
 
