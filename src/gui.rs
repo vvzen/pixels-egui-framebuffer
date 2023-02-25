@@ -23,12 +23,18 @@ struct Gui {
     scale_factor: f32,
     // UI options
     window_open: bool,
-    slider_1_value: f32,
     should_rerender: bool,
     window_width: u32,
     window_height: u32,
     file_path: String,
-    color_chosen: [u8; 4],
+    color_a: [u8; 4],
+    color_b: [u8; 4],
+    file_format_chosen: FileFormat,
+}
+
+#[derive(Debug, PartialEq)]
+enum FileFormat {
+    OpenEXR,
 }
 
 impl Framework {
@@ -148,13 +154,14 @@ impl Gui {
     fn new(width: u32, height: u32, scale_factor: f32) -> Self {
         Self {
             window_open: true,
-            slider_1_value: 0.0,
             should_rerender: false,
             window_width: width,
             window_height: height,
             file_path: String::new(),
-            color_chosen: [0xff; 4],
+            color_a: [0x00, 0x00, 0x00, 0xff],
+            color_b: [0xff, 0xff, 0xff, 0xff],
             scale_factor,
+            file_format_chosen: FileFormat::OpenEXR,
         }
     }
 
@@ -171,21 +178,26 @@ impl Gui {
             });
         });
 
-        egui::Window::new("Window 1")
+        egui::Window::new("Scene Options")
             .open(&mut self.window_open)
             .default_pos(egui::Pos2::new(
                 self.window_width as f32 * (1.0 / self.scale_factor) * 0.015,
                 self.window_height as f32 * (1.0 / self.scale_factor) * 0.10,
             ))
             .show(ctx, |ui| {
-                ui.label("Tweaking the code from the minimal-egui example!");
-                ui.label("Made with 💖 in London!");
+                egui::Grid::new("grid_1").show(ui, |ui| {
+                    ui.label("First Color:");
+                    ui.color_edit_button_srgba_unmultiplied(&mut self.color_a);
+                    ui.label("Second Color:");
+                    ui.color_edit_button_srgba_unmultiplied(&mut self.color_b);
+                    ui.end_row();
+                });
 
-                let slider1_range = std::ops::RangeInclusive::new(0.0, 100.0);
+                ui.separator();
 
-                ui.add(egui::Slider::new(&mut self.slider_1_value, slider1_range).text("Slider 1"));
                 if ui.button("Render").clicked() {
                     self.should_rerender = true;
+                    eprintln!("Re-rendering...");
                 }
 
                 ui.separator();
@@ -204,9 +216,19 @@ impl Gui {
                 self.window_height as f32 * (1.0 / self.scale_factor) * 0.10,
             ))
             .show(ctx, |ui| {
-                ui.label("Color:");
-                ui.color_edit_button_srgba_unmultiplied(&mut self.color_chosen);
+                egui::ComboBox::from_label("Output format")
+                    .selected_text(format!("{:?}", self.file_format_chosen))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut self.file_format_chosen,
+                            FileFormat::OpenEXR,
+                            "OpenEXR",
+                        );
+                    });
+
                 ui.separator();
+                ui.spacing_mut().item_spacing.x /= 2.0;
+
                 ui.label("File name:");
                 ui.text_edit_singleline(&mut self.file_path);
                 if ui.button("Save").clicked() {
