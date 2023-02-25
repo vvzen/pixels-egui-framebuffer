@@ -21,10 +21,11 @@ pub fn render_bg_image(pixels: &mut [u8; FRAMEBUFFER_SIZE]) {
             let blue = color::srgb_u8(0, 0, 255).convert::<Oklab>();
             let green = color::srgb_u8(0, 255, 0).convert::<Oklab>();
             let h_blended = red.blend(green, u);
-            let v_blended = h_blended.blend(blue, v);
+            let v_blended = red.blend(blue, v);
+            let o = h_blended.blend(v_blended, 0.5);
 
             // Convert to display referred
-            let output: Color<EncodedSrgb, Display> = v_blended.convert();
+            let output: Color<EncodedSrgb, Display> = o.convert();
 
             // Can I avoid doing a copy here ?
             let rgb: [u8; 3] = output.to_u8();
