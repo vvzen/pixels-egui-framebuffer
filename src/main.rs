@@ -133,11 +133,7 @@ impl ApplicationState {
     fn new() -> Self {
         // Start from black
         let mut pixels: [u8; FRAMEBUFFER_SIZE] = [0x00; FRAMEBUFFER_SIZE];
-        render_bg_image(
-            &mut pixels,
-            FRAMEBUFFER_WIDTH as usize,
-            FRAMEBUFFER_HEIGHT as usize,
-        );
+        render_bg_image(&mut pixels);
 
         Self {
             framebuffer: pixels,

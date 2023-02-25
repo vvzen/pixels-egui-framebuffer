@@ -1,20 +1,20 @@
 use colstodian::spaces::EncodedSrgb;
 use colstodian::{color, Color, Display, Oklab};
 
-use crate::constants::{FRAMEBUFFER_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::constants::{FRAMEBUFFER_HEIGHT, FRAMEBUFFER_SIZE, FRAMEBUFFER_WIDTH};
 
 /// Linear remap a value in one range into another range (no clamping)
 pub fn fit_range(x: f32, imin: f32, imax: f32, omin: f32, omax: f32) -> f32 {
     (omax - omin) * (x - imin) / (imax - imin) + omin
 }
 
-pub fn render_bg_image(pixels: &mut [u8; FRAMEBUFFER_SIZE], width: usize, height: usize) {
+pub fn render_bg_image(pixels: &mut [u8; FRAMEBUFFER_SIZE]) {
     let mut index: usize = 0;
-    for x in 0..width {
-        for y in 0..height {
+    for x in 0..FRAMEBUFFER_WIDTH {
+        for y in 0..FRAMEBUFFER_HEIGHT {
             // Get normalized U,V coordinates as we move through the image
-            let u = fit_range(x as f32, 0.0, WINDOW_WIDTH as f32, 0.0, 1.0);
-            let v = fit_range(y as f32, 0.0, WINDOW_HEIGHT as f32, 0.0, 1.0);
+            let u = fit_range(x as f32, 0.0, FRAMEBUFFER_WIDTH as f32, 0.0, 1.0);
+            let v = fit_range(y as f32, 0.0, FRAMEBUFFER_HEIGHT as f32, 0.0, 1.0);
 
             // Generate a gradient between two colors in LAB space
             let red = color::srgb_u8(255, 0, 0).convert::<Oklab>();
