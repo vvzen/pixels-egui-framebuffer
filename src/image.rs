@@ -1,40 +1,42 @@
-use colstodian::spaces::EncodedSrgb;
-use colstodian::{color, Color, Display, Oklab};
+use colstodian::spaces::{AcesCg, EncodedSrgb};
+use colstodian::{color, Color, Display, Oklab, Scene};
+use exr::prelude::{AnyChannel, AnyChannels, FlatSamples};
+use smallvec::smallvec;
 
-use crate::constants::{FRAMEBUFFER_HEIGHT, FRAMEBUFFER_SIZE, FRAMEBUFFER_WIDTH};
+use crate::constants::{RENDER_BUFFER_HEIGHT, RENDER_BUFFER_SIZE, RENDER_BUFFER_WIDTH};
 
 /// Linear remap a value in one range into another range (no clamping)
 pub fn fit_range(x: f32, imin: f32, imax: f32, omin: f32, omax: f32) -> f32 {
     (omax - omin) * (x - imin) / (imax - imin) + omin
 }
 
-pub fn render_bg_image(pixels: &mut [u8; FRAMEBUFFER_SIZE]) {
+pub fn render_bg_image(render_buffer: &mut [f32; RENDER_BUFFER_SIZE]) {
     let mut index: usize = 0;
-    for x in 0..FRAMEBUFFER_WIDTH {
-        for y in 0..FRAMEBUFFER_HEIGHT {
+    for x in 0..RENDER_BUFFER_WIDTH {
+        for y in 0..RENDER_BUFFER_HEIGHT {
             // Get normalized U,V coordinates as we move through the image
-            let u = fit_range(x as f32, 0.0, FRAMEBUFFER_WIDTH as f32, 0.0, 1.0);
-            let v = fit_range(y as f32, 0.0, FRAMEBUFFER_HEIGHT as f32, 0.0, 1.0);
+            let u = fit_range(x as f32, 0.0, RENDER_BUFFER_WIDTH as f32, 0.0, 1.0);
+            let v = fit_range(y as f32, 0.0, RENDER_BUFFER_HEIGHT as f32, 0.0, 1.0);
 
-            // Generate a gradient between two colors in LAB space
-            let red = color::srgb_u8(255, 0, 0).convert::<Oklab>();
-            let blue = color::srgb_u8(0, 0, 255).convert::<Oklab>();
-            let green = color::srgb_u8(0, 255, 0).convert::<Oklab>();
+            // Generate a gradient between two colors in AcesCG
+            // TODO: Could we do this in LAB, and then convert to ACES CG ?
+            let red = color::srgb_u8(255, 0, 0).convert::<AcesCg>();
+            let blue = color::srgb_u8(0, 0, 255).convert::<AcesCg>();
+            let green = color::srgb_u8(0, 255, 0).convert::<AcesCg>();
             let h_blended = red.blend(green, u);
             let v_blended = red.blend(blue, v);
-            let o = h_blended.blend(v_blended, 0.5);
+            let final_color = h_blended.blend(v_blended, 0.5);
 
-            // Convert to display referred
-            let output: Color<EncodedSrgb, Display> = o.convert();
-
-            // Can I avoid doing a copy here ?
-            let rgb: [u8; 3] = output.to_u8();
+            // Let's just pretend this is fine..
+            let rendered_color =
+                color::acescg::<Scene>(final_color.r, final_color.g, final_color.b);
 
             // R, G, B, A
-            pixels[index + 0] = rgb[0];
-            pixels[index + 1] = rgb[1];
-            pixels[index + 2] = rgb[2];
-            pixels[index + 3] = 0xff;
+            render_buffer[index + 0] = rendered_color.r;
+            render_buffer[index + 1] = rendered_color.g;
+            render_buffer[index + 2] = rendered_color.b;
+            render_buffer[index + 3] = 1.0;
+
             index += 4;
         }
     }
