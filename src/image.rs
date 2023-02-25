@@ -83,7 +83,7 @@ pub fn write_as_exr_image(
     let layer = Layer::new(
         resolution,
         layer_attributes,
-        Encoding::FAST_LOSSLESS,
+        Encoding::SMALL_LOSSLESS,
         channels,
     );
 
