@@ -47,9 +47,14 @@ pub fn render_bg_image(render_buffer: &mut [f32; RENDER_BUFFER_SIZE]) {
     }
 }
 
-pub fn pixels_array_to_exr_channels(
-    render_buffer: &[f32; RENDER_BUFFER_SIZE],
-) -> AnyChannels<FlatSamples> {
+pub fn write_as_exr_image(
+    image_path: impl AsRef<Path>,
+    width: usize,
+    height: usize,
+    render_buffer: &Box<[f32; RENDER_BUFFER_SIZE]>,
+) -> anyhow::Result<()> {
+    let resolution = (width, height);
+
     // A vec for each channel
     let mut r_vec: Vec<f32> = Vec::new();
     let mut g_vec: Vec<f32> = Vec::new();
@@ -67,16 +72,6 @@ pub fn pixels_array_to_exr_channels(
     let b_channel = AnyChannel::new("B", FlatSamples::F32(b_vec));
 
     let channels = AnyChannels::sort(smallvec![r_channel, g_channel, b_channel]);
-    channels
-}
-
-pub fn write_simple_image(
-    image_path: impl AsRef<Path>,
-    channels: AnyChannels<FlatSamples>,
-    width: usize,
-    height: usize,
-) -> anyhow::Result<()> {
-    let resolution = (width, height);
 
     // The layer attributes can store additional metadata
     let mut layer_attributes = LayerAttributes::named("rgb");

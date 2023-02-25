@@ -7,7 +7,7 @@ use winit::event_loop::EventLoopWindowTarget;
 use winit::window::Window;
 
 use crate::constants::{RENDER_BUFFER_HEIGHT, RENDER_BUFFER_SIZE, RENDER_BUFFER_WIDTH};
-use crate::image::{pixels_array_to_exr_channels, write_simple_image};
+use crate::image::write_as_exr_image;
 
 /// Manages all state required for rendering egui over `Pixels`.
 pub(crate) struct Framework {
@@ -243,13 +243,11 @@ impl Gui {
                 ui.separator();
                 ui.spacing_mut().item_spacing.x /= 2.0;
 
-                ui.label("File name:");
+                ui.label("File name (without extension):");
                 ui.text_edit_singleline(&mut self.file_path);
 
                 // Here goes the save logic
                 if ui.button("Save").clicked() {
-                    let exr_channels = pixels_array_to_exr_channels(&self.render_buffer_pointer);
-
                     let root_dir = PathBuf::from("images");
                     if !root_dir.exists() {
                         match std::fs::create_dir_all(&root_dir) {
@@ -259,13 +257,14 @@ impl Gui {
                             }
                         }
                     }
-                    let image_path = root_dir.join(&self.file_path);
+                    // Assume exr, for now :)
+                    let image_path = root_dir.join(format!("{}.exr", self.file_path));
 
-                    match write_simple_image(
+                    match write_as_exr_image(
                         &image_path,
-                        exr_channels,
                         RENDER_BUFFER_WIDTH as usize,
                         RENDER_BUFFER_HEIGHT as usize,
+                        &self.render_buffer_pointer,
                     ) {
                         Ok(_) => {
                             eprintln!("Image saved to {}", image_path.display());

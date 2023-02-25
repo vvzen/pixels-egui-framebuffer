@@ -20,7 +20,7 @@ use crate::constants::{
     RENDER_BUFFER_HEIGHT, RENDER_BUFFER_SIZE, RENDER_BUFFER_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
 };
 use crate::gui::Framework;
-use crate::image::{pixels_array_to_exr_channels, render_bg_image};
+use crate::image::render_bg_image;
 
 /// Representation of the application state
 struct ApplicationState {
