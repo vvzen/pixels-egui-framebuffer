@@ -98,7 +98,7 @@ fn main() -> Result<(), Error> {
             }
 
             // Update internal state and request a redraw
-            &app.update();
+            app.update();
             window.request_redraw();
         }
 
