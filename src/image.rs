@@ -17,8 +17,8 @@ pub fn fit_range(x: f32, imin: f32, imax: f32, omin: f32, omax: f32) -> f32 {
 
 pub fn render_bg_image(render_buffer: &mut [f32; RENDER_BUFFER_SIZE]) {
     let mut index: usize = 0;
-    for x in 0..RENDER_BUFFER_WIDTH {
-        for y in 0..RENDER_BUFFER_HEIGHT {
+    for y in (0..RENDER_BUFFER_HEIGHT).rev() {
+        for x in 0..RENDER_BUFFER_WIDTH {
             // Get normalized U,V coordinates as we move through the image
             let u = fit_range(x as f32, 0.0, RENDER_BUFFER_WIDTH as f32, 0.0, 1.0);
             let v = fit_range(y as f32, 0.0, RENDER_BUFFER_HEIGHT as f32, 0.0, 1.0);
@@ -32,7 +32,14 @@ pub fn render_bg_image(render_buffer: &mut [f32; RENDER_BUFFER_SIZE]) {
             let v_blended = red.blend(blue, v);
             let final_color = h_blended.blend(v_blended, 0.5);
 
-            // Let's just pretend this is fine..
+            // Here I was playing around with Color Spaces
+            // let red = fit_range(x as f32, 0.0, RENDER_BUFFER_WIDTH as f32, 0.0, 1.0);
+            // let green = fit_range(y as f32, 0.0, RENDER_BUFFER_HEIGHT as f32, 0.0, 1.0);
+            // let blue = 0.25;
+
+            // let rd = color::acescg::<Display>(red, green, blue);
+            // let rendered_color: Color<AcesCg, Scene> = rd.convert_state(|f| f);
+
             let rendered_color =
                 color::acescg::<Scene>(final_color.r, final_color.g, final_color.b);
 
